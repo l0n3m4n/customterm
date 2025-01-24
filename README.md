@@ -1,8 +1,7 @@
 
-<center>
-    <h1>Welcome to Oh My Zsh!</h1>
-</center>
-
+<h1 align="center">
+  Welcome to ohmyzsh customization
+</h1>
 
 <p align="center">
     <a href="https://visitorbadge.io/status?path=https%3A%2F%2Fgithub.com%2Fl0n3m4n%2Fcustom-terminal">
