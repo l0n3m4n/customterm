@@ -53,3 +53,4 @@ git clone --depth=1 https://github.com/romkatv/powerlevel10k.git "${ZSH_CUSTOM:-
  - [zsh-syntax-highlighting](https://github.com/zsh-users/zsh-syntax-highlighting)
  - [zsh-fast-syntax-highlighting](https://github.com/zdharma/fast-syntax-highlighting)
  - [zsh-autocomplete](https://github.com/marlonrichert/zsh-autocomplete)
+ - [zsh-theme](https://github.com/romkatv/powerlevel10k)
