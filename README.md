@@ -36,7 +36,7 @@ This script automates the setup of a custom Zsh terminal environment for both Li
 *   Sudo access check for dependency installation.
 
 ## Getting Started
-
+![logo](assets/banner.png)
 ### Prerequisites
 
 *   A Linux distribution (tested on Debian/Ubuntu, Fedora, Arch-based systems) or macOS.
@@ -47,12 +47,12 @@ This script automates the setup of a custom Zsh terminal environment for both Li
 
 1.  **Clone the repository (or download the script):**
     ```bash
-    git clone https://github.com/l0n3m4n/custom-terminal.git
+    git clone https://github.com/l0n3m4n/customterm.git
     cd customterm
     ```
     or simply download the `customterm.sh` script:
     ```bash
-    curl -o customterm.sh https://raw.githubusercontent.com/l0n3m4n/custom-terminal/refs/heads/main/customterm.sh
+    curl -o customterm.sh https://raw.githubusercontent.com/l0n3m4n/customterm/refs/heads/main/customterm.sh
     chmod +x customterm.sh
     ```
 
@@ -74,8 +74,8 @@ This script automates the setup of a custom Zsh terminal environment for both Li
 ✔ curl found.
 ✔ git found.
 🌐 Checking Internet...
-
-
+```
+```bash
 # help menu
 ➜  customterm ./customterm.sh -h 
 
@@ -96,7 +96,8 @@ Examples:
   sudo customterm.sh -a
   customterm.sh -p
   sudo customterm.sh -r
-
+```
+```bash
 # check path
 ➜  customterm ./customterm.sh -p
 
@@ -119,18 +120,6 @@ After the script completes, it will prompt you to restart your shell. You can do
 
 You may then need to configure Powerlevel10k by running `p10k configure` in your new Zsh terminal.
 
-## Usage
-
-Simply run the script as described in the Installation section. It will interactively ask you about backups, plugin selections, and cleanup options.
-
-## Troubleshooting
-
-*   **"This script requires amd64 architecture on Linux."** or **"This script requires x86_64 or arm64 architecture on macOS."**: Ensure your system architecture is supported.
-*   **"No Internet Connection."**: Check your network connection.
-*   **"Sudo command not found..."** or **"you don't have password-less sudo access."**: Ensure `sudo` is installed and you have the necessary permissions. You might need to run the script with `sudo ./customterm.sh` if prompted.
-*   **Homebrew installation failed on macOS**: Check your internet connection and ensure you have sufficient permissions. You might need to run the Homebrew installation command manually from their official website.
-*   **Installation of `zsh`, `curl`, or `git` failed**: Your distribution might require a different package manager or manual installation. Install these dependencies manually and re-run the script.
-*   **Oh-My-Zsh / Plugin / Theme installation failed**: Check the log file (`~/.custom_terminal_install.log`) for details. Ensure you have proper internet connectivity and GitHub is accessible.
 
 ## License
 
