@@ -96,10 +96,23 @@ Examples:
   sudo customterm.sh -a
   customterm.sh -p
   sudo customterm.sh -r
+
+# check path
+➜  customterm ./customterm.sh -p
+
+             _             _                 
+ ___ _ _ ___| |_ ___ _____| |_ ___ ___ _____ 
+|  _| | |_ -|  _| . |     |  _| -_|  _|     |
+|___|___|___|_| |___|_|_|_|_| |___|_| |_|_|_|
+        author: l0n3m4n | version:v1.0.0
+
+Important Paths:
+  ZSHRC: /home/advtool/.zshrc
+  BACKUP: /home/advtool/.zshrc.bak
+  LOG: /home/advtool/custom_terminal_install.log
+  ZSH_CUSTOM: /home/advtool/.oh-my-zsh/custom
+
 ```
-
-    The script will guide you through the installation process, asking for confirmation before making changes.
-
 ### Post-Installation
 
 After the script completes, it will prompt you to restart your shell. You can do this by typing `exec zsh` or by closing and reopening your terminal.
