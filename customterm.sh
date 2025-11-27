@@ -30,7 +30,7 @@ fi
 
 # Re-assign user-specific paths to use USER_HOME
 BACKUP="$USER_HOME/.zshrc.bak"
-LOG="$USER_HOME/custom_terminal_install.log"
+LOG="$USER_HOME/customterm.logs"
 ZSH_CUSTOM="${ZSH_CUSTOM:-$USER_HOME/.oh-my-zsh/custom}"
 ZSHRC="$USER_HOME/.zshrc"
 
@@ -60,15 +60,15 @@ cat << EOF
  ___ _ _ ___| |_ ___ _____| |_ ___ ___ _____ 
 |  _| | |_ -|  _| . |     |  _| -_|  _|     |
 |___|___|___|_| |___|_|_|_|_| |___|_| |_|_|_|
-        author: l0n3m4n | version:${version_val}
+       author: l0n3m4n | version:${version_val}
 EOF
 }
 
 usage() {
     echo -e "\n${YELLOW}Usage:${RESET} ${CYAN}$(basename "$0") [-h] [-all] [-p] [-r]${RESET}"
     echo -e "  ${GREEN}-h:${RESET} Display this help message."
-    echo -e "  ${GREEN}-a:${RESET} Perform a non-interactive installation with all recommended settings."
-    echo -e "  ${GREEN}-p:${RESET} Show important paths \(e.g., .zshrc, custom plugin directory\)."
+    echo -e "  ${GREEN}-a:${RESET} Perform a non-interactive with all recommended settings."
+    echo -e "  ${GREEN}-p:${RESET} Show important paths (e.g., .zshrc, plugin directory)."
     echo -e "  ${GREEN}-r:${RESET} Remove Oh-My-Zsh, plugins, theme, and clean .zshrc."
     echo ""
     echo -e "${YELLOW}Examples:${RESET}"
@@ -409,7 +409,7 @@ msg "🔧 Choose Plugin Setup:
 3) Skip plugin installation"
 
 if [[ "$ALL_INSTALL" == "true" ]]; then
-    msg "Automatically selecting all recommended plugins due to -all flag."
+    msg "Automatically selecting all recommended plugins due to -a flag."
     choice="2"
 else
     read -p "Enter choice (1/2/3): " choice
