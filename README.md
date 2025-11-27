@@ -42,7 +42,7 @@ This script automates the setup of a custom Zsh terminal environment for both Li
 *   A Linux distribution (tested on Debian/Ubuntu, Fedora, Arch-based systems) or macOS.
 *   `sudo` privileges for installing system dependencies (Linux only).
 *   Homebrew (for macOS users): The script will prompt to install it if not found.
-*   An active internet connection.
+
 ### Installation
 
 1.  **Clone the repository (or download the script):**
@@ -57,28 +57,6 @@ This script automates the setup of a custom Zsh terminal environment for both Li
     ```
 
 ### **Run the script:**
-```bash
-# help menu
-➜  customterm ./customterm.sh -h 
-
-             _             _                 
- ___ _ _ ___| |_ ___ _____| |_ ___ ___ _____ 
-|  _| | |_ -|  _| . |     |  _| -_|  _|     |
-|___|___|___|_| |___|_|_|_|_| |___|_| |_|_|_|
-        author: l0n3m4n | version:v1.0.0
-
-Usage: customterm.sh [-h] [-all] [-p] [-r]
-  -h: Display this help message.
-  -a: Perform a non-interactive installation with all recommended settings.
-  -p: Show important paths \(e.g., .zshrc, custom plugin directory\).
-  -r: Remove Oh-My-Zsh, plugins, theme, and clean .zshrc.
-
-Examples:
-  customterm.sh -h
-  sudo customterm.sh -a
-  customterm.sh -p
-  sudo customterm.sh -r
-```
 ![gif](assets/customterm.gif)
  
 ### Post-Installation
