@@ -56,25 +56,7 @@ This script automates the setup of a custom Zsh terminal environment for both Li
     chmod +x customterm.sh
     ```
 
-2.  **Run the script:**
-```bash
-# run script
-➜  customterm ./customterm.sh -a
-
-             _             _                 
- ___ _ _ ___| |_ ___ _____| |_ ___ ___ _____ 
-|  _| | |_ -|  _| . |     |  _| -_|  _|     |
-|___|___|___|_| |___|_|_|_|_| |___|_| |_|_|_|
-        author: l0n3m4n | version:v1.0.0
-
-🔍 Checking System...
-🔑 Checking sudo access...
-✔ Sudo access confirmed.
-✔ zsh found.
-✔ curl found.
-✔ git found.
-🌐 Checking Internet...
-```
+### **Run the script:**
 ```bash
 # help menu
 ➜  customterm ./customterm.sh -h 
@@ -97,23 +79,8 @@ Examples:
   customterm.sh -p
   sudo customterm.sh -r
 ```
-```bash
-# check path
-➜  customterm ./customterm.sh -p
-
-             _             _                 
- ___ _ _ ___| |_ ___ _____| |_ ___ ___ _____ 
-|  _| | |_ -|  _| . |     |  _| -_|  _|     |
-|___|___|___|_| |___|_|_|_|_| |___|_| |_|_|_|
-        author: l0n3m4n | version:v1.0.0
-
-Important Paths:
-  ZSHRC: /home/advtool/.zshrc
-  BACKUP: /home/advtool/.zshrc.bak
-  LOG: /home/advtool/custom_terminal_install.log
-  ZSH_CUSTOM: /home/advtool/.oh-my-zsh/custom
-
-```
+![gif](assets/customterm.gif)
+ 
 ### Post-Installation
 
 After the script completes, it will prompt you to restart your shell. You can do this by typing `exec zsh` or by closing and reopening your terminal.

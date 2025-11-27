@@ -465,21 +465,63 @@ fi
 # ===========================================================
 msg "📝 Updating .zshrc..."
 
-# Insert plugins
-if grep -q "^plugins=(.*)" "$ZSHRC"; then
-    sed -i -E "s/^(plugins=)\((.*)\)/\1(${selected_plugins[*]})/" "$ZSHRC"
+# --- Restore original .zshrc if a backup exists ---
+if [[ -f "$BACKUP" ]]; then
+    msg "Restoring your original .zshrc from backup to preserve custom settings..."
+    cp "$BACKUP" "$ZSHRC"
+    success "Original .zshrc restored."
+fi
+
+# --- Ensure Oh-My-Zsh required lines are present ---
+
+# 1. Set ZSH environment variable
+OMZ_PATH_STR="export ZSH=\"$USER_HOME/.oh-my-zsh\""
+if ! grep -qF 'export ZSH=' "$ZSHRC"; then
+    msg "Adding ZSH environment variable..."
+    # Prepend to the file safely
+    echo -e "$OMZ_PATH_STR\n" | cat - "$ZSHRC" > "${ZSHRC}.tmp" && mv "${ZSHRC}.tmp" "$ZSHRC"
+    success "ZSH variable set."
+fi
+
+# 2. Set ZSH_THEME
+# Remove any existing ZSH_THEME definitions to avoid conflicts
+sed -i '/^ZSH_THEME=/d' "$ZSHRC"
+# Add our theme, preferably before plugins are sourced
+THEME_STR="ZSH_THEME=\"powerlevel10k/powerlevel10k\""
+if grep -q "oh-my-zsh.sh" "$ZSHRC"; then
+    # Insert before the source line for better organization
+    sed -i "/oh-my-zsh.sh/i $THEME_STR" "$ZSHRC"
 else
-    echo "plugins=(${selected_plugins[*]})" >> "$ZSHRC"
+    # Append if source line not found (fallback)
+    echo "$THEME_STR" >> "$ZSHRC"
+fi
+success "Powerlevel10k theme configured."
+
+
+# 3. Set plugins
+PLUGIN_STR="plugins=(${selected_plugins[*]})"
+if grep -q "^plugins=(.*)" "$ZSHRC"; then
+    # If plugins array exists, replace it
+    sed -i -E "s/^plugins=\(.*\)/$PLUGIN_STR/" "$ZSHRC"
+    success "Updated existing plugin list."
+else
+    # If no plugins array, add it before the source line
+    if grep -q "oh-my-zsh.sh" "$ZSHRC"; then
+        sed -i "/oh-my-zsh.sh/i $PLUGIN_STR" "$ZSHRC"
+    else
+        # Append if source line not found (fallback)
+        echo "$PLUGIN_STR" >> "$ZSHRC"
+    fi
+    success "Added new plugin list."
 fi
 
-# Remove any existing ZSH_THEME definitions
-if grep -q "^ZSH_THEME=" "$ZSHRC"; then
-    sed -i '/^ZSH_THEME=/d' "$ZSHRC"
+# 4. Source Oh-My-Zsh
+OMZ_SOURCE_STR="source \"\$ZSH/oh-my-zsh.sh\""
+if ! grep -q "oh-my-zsh.sh" "$ZSHRC"; then
+    msg "Adding Oh-My-Zsh source line..."
+    echo -e "\n# Load Oh-My-Zsh\n$OMZ_SOURCE_STR" >> "$ZSHRC"
+    success "Oh-My-Zsh will be sourced."
 fi
-
-# Append the new ZSH_THEME definition
-echo "ZSH_THEME=\"powerlevel10k/powerlevel10k\"" >> "$ZSHRC"
-
 
 success ".zshrc Updated."
 
@@ -494,7 +536,7 @@ if [[ "$ALL_INSTALL" == "true" ]]; then
 else
     if confirm "Configure Powerlevel10k now?"; then
         msg "Starting Powerlevel10k configuration wizard..."
-        p10k configure
+        "$ZSH_CUSTOM/themes/powerlevel10k/gitstatus/bin/p10k" configure
         success "Powerlevel10k configured."
     fi
 fi
