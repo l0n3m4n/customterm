@@ -21,7 +21,7 @@ Customterm
     </a>
 </p>
 
-This script automates the setup of a custom Zsh terminal environment for both Linux and macOS...
+Customterm automates the setup of a custom Zsh terminal environment for both Linux and macOS...
 
 ## Features
 
