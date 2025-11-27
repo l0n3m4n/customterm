@@ -20,13 +20,11 @@ error() { echo -e "${RED}❌ $1${RESET}"; log "ERROR: $1"; exit 1; }
 
 Version=v1.0.0
 
-# Dynamically set USER_HOME based on whether script is run with sudo
+ 
 if [[ -n "$SUDO_USER" && "$UID" == "0" ]]; then
-    # Script is run with sudo, get the original user's home directory
     USER_HOME=$(getent passwd "$SUDO_USER" | cut -d: -f6)
     msg "ℹ️ Running with sudo, configuring for user: $SUDO_USER in $USER_HOME"
 else
-    # Not running with sudo, use the current user's home directory
     USER_HOME="$HOME"
 fi
 
@@ -87,7 +85,7 @@ confirm() {
   if [[ "$ALL_INSTALL" == "true" ]]; then
     true
   else
-    echo -n "$1 (y/n): " # Use echo -n to avoid newline
+    echo -n "$1 (y/n): "  
     read ans
     [[ "$ans" == "y" || "$ans" == "Y" ]]
   fi
@@ -162,14 +160,12 @@ remove_func() {
         rm -f "$BACKUP" && success "Backup file removed."
     elif [[ -f "$ZSHRC" ]]; then
         msg "Cleaning .zshrc file..."
-        # Remove lines added by this script
         # Remove the specific ZSH_THEME line added by this script
         sed -i '/^ZSH_THEME="powerlevel10k\/powerlevel10k"$/d' "$ZSHRC"
         # --- Plugin cleanup ---
         # Check if a plugins=(...) line exists
         if grep -q "^plugins=(" "$ZSHRC"; then
             current_plugins_line=$(grep "^plugins=(" "$ZSHRC")
-            # Extract plugins string from inside parentheses, e.g., "git zsh-autosuggestions"
             current_plugins_str=$(echo "$current_plugins_line" | sed -E 's/^plugins=\((.*)\)/\1/' | xargs) # xargs to trim whitespace
             
             declare -a filtered_plugins_array
@@ -180,7 +176,7 @@ remove_func() {
             # Filter out plugins installed by this script
             for p in "${current_plugins_array[@]}"; do
                 is_installed_plugin=false
-                for installed_p in "${plugins[@]}"; do # 'plugins' is the global array of plugins this script manages
+                for installed_p in "${plugins[@]}"; do
                     if [[ "$p" == "$installed_p" ]]; then
                         is_installed_plugin=true
                         break
@@ -210,7 +206,7 @@ remove_func() {
     fi
 
     # Change default shell back to bash (optional, with confirmation)
-    if [[ "$SHELL" == "$(which zsh)" ]]; then # Check if zsh is default shell
+    if [[ "$SHELL" == "$(which zsh)" ]]; then 
         if confirm "Zsh is your default shell. Change back to bash?"; then
             if chsh -s "$(which bash)"; then
                 success "Default shell changed to bash. Please restart your terminal."
@@ -471,19 +467,16 @@ msg "📝 Updating .zshrc..."
 
 # Insert plugins
 if grep -q "^plugins=(.*)" "$ZSHRC"; then
-    # Use a non-greedy regex to replace the content within plugins=(...)
-    # This ensures only the plugin list is updated, not other lines starting with 'plugins='
     sed -i -E "s/^(plugins=)\((.*)\)/\1(${selected_plugins[*]})/" "$ZSHRC"
 else
-    # If the plugins line doesn't exist, append it.
     echo "plugins=(${selected_plugins[*]})" >> "$ZSHRC"
 fi
 
-# Insert theme
 # Remove any existing ZSH_THEME definitions
 if grep -q "^ZSH_THEME=" "$ZSHRC"; then
     sed -i '/^ZSH_THEME=/d' "$ZSHRC"
 fi
+
 # Append the new ZSH_THEME definition
 echo "ZSH_THEME=\"powerlevel10k/powerlevel10k\"" >> "$ZSHRC"
 
