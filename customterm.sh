@@ -65,17 +65,19 @@ EOF
 }
 
 usage() {
-    echo -e "\n${YELLOW}Usage:${RESET} ${CYAN}$(basename "$0") [-h] [-all] [-p] [-r]${RESET}"
+    echo -e "\n${YELLOW}Usage:${RESET} ${CYAN}$(basename "$0") [-h] [-a] [-p] [-r] [-R]${RESET}"
     echo -e "  ${GREEN}-h:${RESET} Display this help message."
     echo -e "  ${GREEN}-a:${RESET} Perform a non-interactive with all recommended settings."
     echo -e "  ${GREEN}-p:${RESET} Show important paths (e.g., .zshrc, plugin directory)."
     echo -e "  ${GREEN}-r:${RESET} Remove Oh-My-Zsh, plugins, theme, and clean .zshrc."
+    echo -e "  ${GREEN}-R:${RESET} Also install for the root user (requires sudo)."
     echo ""
     echo -e "${YELLOW}Examples:${RESET}"
     echo -e "  ${CYAN}$(basename "$0") -h${RESET}"
     echo -e "  ${CYAN}sudo $(basename "$0") -a${RESET}"
     echo -e "  ${CYAN}$(basename "$0") -p${RESET}"
     echo -e "  ${CYAN}sudo $(basename "$0") -r${RESET}"
+    echo -e "  ${CYAN}sudo $(basename "$0") -a -R${RESET}"
     exit 0
 }
 
@@ -230,6 +232,259 @@ show_paths_func() {
 }
 
 # ===========================================================
+# Installation Function
+# ===========================================================
+install_zsh_config() {
+    local target_user_home="$1"
+    local target_username="$2"
+
+    msg "\n${CYAN}--- Configuring Zsh for user: $target_username in $target_user_home ---${RESET}"
+
+    local current_zshrc="$target_user_home/.zshrc"
+    local current_backup="$target_user_home/.zshrc.bak"
+    local current_zsh_custom="${target_user_home}/.oh-my-zsh/custom"
+
+    # ===========================================================
+    # Cleanup Phase (with prompts)
+    # ===========================================================
+    msg "🧹 Checking Existing Zsh Installation for $target_username..."
+
+    # Backup
+    if [[ -f "$current_zshrc" ]]; then
+        if confirm "Create backup of $current_zshrc?"; then
+            # Use sudo for cp if target_username is root
+            if [[ "$target_username" == "root" ]]; then
+                sudo cp "$current_zshrc" "$current_backup"
+            else
+                cp "$current_zshrc" "$current_backup"
+            fi
+            success "Backup saved to $current_backup"
+        else
+            warn "Skipping $current_zshrc backup."
+        fi
+    fi
+
+    # Clean plugins
+    msg "🔌 Checking for existing plugins for $target_username..."
+
+    for plugin in "${plugins[@]}"; do
+        plug_path="$current_zsh_custom/plugins/$plugin"
+
+        if [[ -d "$plug_path" ]]; then
+            warn "Existing plugin found: $plugin for $target_username"
+
+            if confirm "Remove existing $plugin for $target_username?"; then
+                # Use sudo for rm if target_username is root
+                if [[ "$target_username" == "root" ]]; then
+                    sudo rm -rf "$plug_path"
+                else
+                    rm -rf "$plug_path"
+                fi
+                success "Removed: $plugin for $target_username"
+            else
+                warn "Keeping existing: $plugin for $target_username"
+            fi
+        fi
+    done
+
+    # Clean theme
+    theme_path="$current_zsh_custom/themes/$theme"
+
+    if [[ -d "$theme_path" ]]; then
+        warn "Existing Powerlevel10k found for $target_username."
+
+        if confirm "Remove existing Powerlevel10k theme for $target_username?"; then
+            # Use sudo for rm if target_username is root
+            if [[ "$target_username" == "root" ]]; then
+                sudo rm -rf "$theme_path"
+            else
+                rm -rf "$theme_path"
+            fi
+            success "Removed: Powerlevel10k for $target_username"
+        else
+            warn "Keeping existing Powerlevel10k theme for $target_username."
+        fi
+    fi
+
+    # Clean .zshrc plugin entries
+    if grep -Eq "zsh-autosuggestions|zsh-syntax-highlighting|fast-syntax-highlighting|zsh-autocomplete|powerlevel10k" "$current_zshrc" 2>/dev/null; then
+        warn "Old plugin entries found in $current_zshrc"
+
+        if confirm "Clean old plugin/theme lines from $current_zshrc?"; then
+            # Use sudo for sed if target_username is root
+            if [[ "$target_username" == "root" ]]; then
+                sudo sed -i '/zsh-autosuggestions/d;/zsh-syntax-highlighting/d;/fast-syntax-highlighting/d;/zsh-autocomplete/d;/powerlevel10k/d' "$current_zshrc"
+            else
+                sed -i '/zsh-autosuggestions/d;/zsh-syntax-highlighting/d;/fast-syntax-highlighting/d;/zsh-autocomplete/d;/powerlevel10k/d' "$current_zshrc"
+            fi
+            success "Cleaned old entries in $current_zshrc."
+        else
+            warn "Keeping existing plugin entries in $current_zshrc."
+        fi
+    fi
+
+    success "Cleanup Completed for $target_username."
+
+
+
+    # ===========================================================
+    # Plugin Installation (uses global selected_plugins)
+    # ===========================================================
+    # Define plugin repositories (uses global PLUGIN_REPOS)
+    # Define theme repository (uses global THEME_REPO)
+
+    for plugin in "${selected_plugins[@]}"; do
+        plug_path="$current_zsh_custom/plugins/$plugin"
+        repo="${PLUGIN_REPOS[$plugin]}" # Get repo URL from associative array
+
+        if [[ -z "$repo" ]]; then
+            warn "Repository URL not defined for plugin: $plugin. Skipping."
+            continue
+        fi
+
+        if [[ -d "$plug_path" ]]; then
+            warn "Plugin '$plugin' already exists for $target_username. Skipping installation."
+        else
+            # Use sudo -u for the target user if not root, otherwise just run as root
+            if [[ "$target_username" == "root" ]]; then
+                git clone --depth=1 "$repo" "$plug_path" || error "Failed installing $plugin for $target_username"
+            else
+                sudo -u "$target_username" git clone --depth=1 "$repo" "$plug_path" || error "Failed installing $plugin for $target_username"
+            fi
+            success "Installed plugin: $plugin for $target_username"
+        fi
+    done
+
+    # ===========================================================
+    # Install Theme
+    # ===========================================================
+    msg "🎨 Installing Powerlevel10k Theme for $target_username..."
+    if [[ -d "$current_zsh_custom/themes/powerlevel10k" ]]; then
+        warn "Powerlevel10k is already installed for $target_username. Skipping installation."
+    else
+        # Use sudo -u for the target user if not root, otherwise just run as root
+        if [[ "$target_username" == "root" ]]; then
+            git clone --depth=1 "$THEME_REPO" \
+            "$current_zsh_custom/themes/powerlevel10k" || error "Failed installing Powerlevel10k for $target_username."
+        else
+            sudo -u "$target_username" git clone --depth=1 "$THEME_REPO" \
+            "$current_zsh_custom/themes/powerlevel10k" || error "Failed installing Powerlevel10k for $target_username."
+        fi
+        success "Powerlevel10k Installed for $target_username."
+    fi
+
+    # ===========================================================
+    # Modify .zshrc
+    # ===========================================================
+    msg "📝 Updating $current_zshrc..."
+
+    # --- Restore original .zshrc if a backup exists ---
+    if [[ -f "$current_backup" ]]; then
+        msg "Restoring original $current_zshrc from backup to preserve custom settings..."
+        # Use sudo for cp if target_username is root
+        if [[ "$target_username" == "root" ]]; then
+            sudo cp "$current_backup" "$current_zshrc"
+        else
+            cp "$current_backup" "$current_zshrc"
+        fi
+        success "Original $current_zshrc restored."
+    fi
+
+    # --- Ensure Oh-My-Zsh required lines are present ---
+
+    # 1. Set ZSH environment variable
+    OMZ_PATH_STR="export ZSH=\"$target_user_home/.oh-my-zsh\""
+    if ! grep -qF 'export ZSH=' "$current_zshrc" 2>/dev/null; then
+        msg "Adding ZSH environment variable to $current_zshrc..."
+        # Prepend to the file safely, use sudo for tee if target_username is root
+        if [[ "$target_username" == "root" ]]; then
+            echo -e "$OMZ_PATH_STR\n" | sudo tee "${current_zshrc}.tmp" > /dev/null && sudo mv "${current_zshrc}.tmp" "$current_zshrc"
+        else
+            echo -e "$OMZ_PATH_STR\n" | cat - "$current_zshrc" > "${current_zshrc}.tmp" && mv "${current_zshrc}.tmp" "$current_zshrc"
+        fi
+        success "ZSH variable set in $current_zshrc."
+    fi
+
+    # 2. Set ZSH_THEME
+    # Remove any existing ZSH_THEME definitions to avoid conflicts
+    if [[ "$target_username" == "root" ]]; then
+        sudo sed -i '/^ZSH_THEME=/d' "$current_zshrc"
+    else
+        sed -i '/^ZSH_THEME=/d' "$current_zshrc"
+    fi
+    # Add our theme, preferably before plugins are sourced
+    THEME_STR="ZSH_THEME=\"powerlevel10k/powerlevel10k\""
+    if grep -q "oh-my-zsh.sh" "$current_zshrc" 2>/dev/null; then
+        # Insert before the source line for better organization
+        if [[ "$target_username" == "root" ]]; then
+            sudo sed -i "/oh-my-zsh.sh/i $THEME_STR" "$current_zshrc"
+        else
+            sed -i "/oh-my-zsh.sh/i $THEME_STR" "$current_zshrc"
+        fi
+    else
+        # Append if source line not found (fallback)
+        if [[ "$target_username" == "root" ]]; then
+            echo "$THEME_STR" | sudo tee -a "$current_zshrc" > /dev/null
+        else
+            echo "$THEME_STR" >> "$current_zshrc"
+        fi
+    fi
+    success "Powerlevel10k theme configured in $current_zshrc."
+
+
+    # 3. Set plugins
+    PLUGIN_STR="plugins=(${selected_plugins[*]})"
+
+    # Remove any existing plugins=(...) lines to ensure a clean insertion
+    if [[ "$target_username" == "root" ]]; then
+        sudo sed -i '/^plugins=(.*)/d' "$current_zshrc"
+    else
+        sed -i '/^plugins=(.*)/d' "$current_zshrc"
+    fi
+
+    # Insert the new plugins line before the source line, or append if source not found
+    if grep -q "oh-my-zsh.sh" "$current_zshrc" 2>/dev/null; then
+        if [[ "$target_username" == "root" ]]; then
+            sudo sed -i "/oh-my-zsh.sh/i $PLUGIN_STR" "$current_zshrc"
+        else
+            sed -i "/oh-my-zsh.sh/i $PLUGIN_STR" "$current_zshrc"
+        fi
+    else
+        if [[ "$target_username" == "root" ]]; then
+            echo "$PLUGIN_STR" | sudo tee -a "$current_zshrc" > /dev/null
+        else
+            echo "$PLUGIN_STR" >> "$current_zshrc"
+        fi
+    fi
+    success "Updated plugin list in $current_zshrc."
+
+    # 4. Source Oh-My-Zsh
+    OMZ_SOURCE_STR="source \"\$ZSH/oh-my-zsh.sh\""
+    if ! grep -q "oh-my-zsh.sh" "$current_zshrc" 2>/dev/null; then
+        msg "Adding Oh-My-Zsh source line to $current_zshrc..."
+        if [[ "$target_username" == "root" ]]; then
+            echo -e "\n# Load Oh-My-Zsh\n$OMZ_SOURCE_STR" | sudo tee -a "$current_zshrc" > /dev/null
+        else
+            echo -e "\n# Load Oh-My-Zsh\n$OMZ_SOURCE_STR" >> "$current_zshrc"
+        fi
+        success "Oh-My-Zsh will be sourced in $current_zshrc."
+    fi
+
+    success "$current_zshrc Updated."
+
+    # Set Zsh as default shell for the target user
+    if confirm "Set Zsh as default shell for $target_username (requires password)?"; then
+        if [[ "$target_username" == "root" ]]; then
+            chsh -s "$(which zsh)" root || warn "Failed to set Zsh as default shell for root. You may need to do it manually."
+        else
+            chsh -s "$(which zsh)" "$target_username" || warn "Failed to set Zsh as default shell for $target_username. You may need to do it manually."
+        fi
+        success "Zsh set as default shell for $target_username."
+    fi
+
+}
+
+# ===========================================================
 # Main Script Logic
 # ===========================================================
 
@@ -237,8 +492,9 @@ print_banner_func "${Version}"
 
 ALL_INSTALL=false
 REMOVE_INSTALL=false
+ROOT_INSTALL=false
 
-while getopts "halpr" opt; do
+while getopts "halprR" opt; do
     case "$opt" in
         h) 
             usage
@@ -248,6 +504,8 @@ while getopts "halpr" opt; do
             show_paths_func
             ;;        r) 
             REMOVE_INSTALL=true
+            ;;        R)
+            ROOT_INSTALL=true
             ;;        \?)
             msg "Invalid option: -$OPTARG" >&2
             usage
@@ -292,32 +550,129 @@ if [[ "$CURRENT_OS" == "macOS" && "$PKG_MANAGER" == "brew" ]]; then
     fi
 fi
 
+# Collect missing tools
+
+declare -a MISSING_TOOLS
+
 for tool in zsh curl git; do
+
     if ! command -v "$tool" >/dev/null 2>&1; then
-        warn "$tool is not installed."
 
-        if confirm "Install $tool now?"; then
-            case "$PKG_MANAGER" in
-                apt)
-                    sudo apt install -y "$tool" || error "Failed installing $tool."
-                    ;;                dnf)
-                    sudo dnf install -y "$tool" || error "Failed installing $tool."
-                    ;;                pacman)
-                    sudo pacman -Sy "$tool" --noconfirm || error "Failed installing $tool."
-                    ;;                brew)
-                    brew install "$tool" || error "Failed installing $tool."
-                    ;;                *)
-                    error "Unsupported distro or package manager. Install $tool manually."
-                    ;;            esac
+        MISSING_TOOLS+=("$tool")
 
-            success "$tool installed."
-        else
-            error "$tool required. Exiting."
-        fi
-    else
-        success "$tool found."
     fi
+
 done
+
+
+
+if [[ ${#MISSING_TOOLS[@]} -gt 0 ]]; then
+
+    warn "The following required tools are not installed: ${MISSING_TOOLS[*]}"
+
+    if confirm "Install missing tools now?"; then
+
+        msg "Attempting to install missing tools..."
+
+
+
+        # Perform package manager update if necessary
+
+        case "$PKG_MANAGER" in
+
+            apt)
+
+                msg "Updating apt package lists..."
+
+                sudo apt update || warn "Failed to update apt package lists. Installation might fail."
+
+                ;;
+
+            pacman)
+
+                msg "Synchronizing pacman databases..."
+
+                sudo pacman -Sy --noconfirm || warn "Failed to synchronize pacman databases. Installation might fail."
+
+                ;;
+
+            brew)
+
+                msg "Updating Homebrew..."
+
+                brew update || warn "Failed to update Homebrew. Installation might fail."
+
+                ;;
+
+        esac
+
+
+
+        # Attempt to install all missing tools
+
+        INSTALL_COMMAND=""
+
+        case "$PKG_MANAGER" in
+
+            apt)
+
+                INSTALL_COMMAND="sudo apt install -y ${MISSING_TOOLS[*]}"
+
+                ;;
+
+            dnf)
+
+                INSTALL_COMMAND="sudo dnf install -y ${MISSING_TOOLS[*]}"
+
+                ;;
+
+            pacman)
+
+                INSTALL_COMMAND="sudo pacman -S --noconfirm ${MISSING_TOOLS[*]}"
+
+                ;;
+
+            brew)
+
+                INSTALL_COMMAND="brew install ${MISSING_TOOLS[*]}"
+
+                ;;
+
+            *)
+
+                error "Unsupported distro or package manager. Please install: ${MISSING_TOOLS[*]} manually."
+
+                ;;
+
+        esac
+
+
+
+        if [[ -n "$INSTALL_COMMAND" ]]; then
+
+            if eval "$INSTALL_COMMAND"; then
+
+                success "Successfully installed: ${MISSING_TOOLS[*]}"
+
+            else
+
+                error "Installation command failed for required tools: ${MISSING_TOOLS[*]}. Please check the output above for details or install them manually. Command attempted: '$INSTALL_COMMAND'"
+
+            fi
+
+        fi
+
+    else
+
+        error "Required tools (${MISSING_TOOLS[*]}) are not installed. Exiting."
+
+    fi
+
+else
+
+    success "All required tools (zsh, curl, git) found."
+
+fi
 # Internet Check
 msg "🌐 Checking Internet..."
 ping -c1 8.8.8.8 &>/dev/null || error "No Internet Connection."
@@ -327,78 +682,13 @@ ping -c1 8.8.8.8 &>/dev/null || error "No Internet Connection."
 
 success "System Check Passed."
 
-# ===========================================================
-# Cleanup Phase (with prompts)
-# ===========================================================
-msg "🧹 Checking Existing Zsh Installation..."
 
-# Backup
-if [[ -f "$ZSHRC" ]]; then
-    if confirm "Create backup of .zshrc?"; then
-        cp "$ZSHRC" "$BACKUP"
-        success "Backup saved to ~/.zshrc.bak"
-    else
-        warn "Skipping .zshrc backup."
-    fi
-fi
 
-# Clean plugins
-msg "🔌 Checking for existing plugins..."
 
-for plugin in "${plugins[@]}"; do
-    plug_path="$ZSH_CUSTOM/plugins/$plugin"
 
-    if [[ -d "$plug_path" ]]; then
-        warn "Existing plugin found: $plugin"
 
-        if confirm "Remove existing $plugin?"; then
-            rm -rf "$plug_path"
-            success "Removed: $plugin"
-        else
-            warn "Keeping existing: $plugin"
-        fi
-    fi
-done
 
-# Clean theme
-theme_path="$ZSH_CUSTOM/themes/$theme"
 
-if [[ -d "$theme_path" ]]; then
-    warn "Existing Powerlevel10k found."
-
-    if confirm "Remove existing Powerlevel10k theme?"; then
-        rm -rf "$theme_path"
-        success "Removed: Powerlevel10k"
-    else
-        warn "Keeping existing Powerlevel10k theme."
-    fi
-fi
-
-# Clean .zshrc plugin entries
-if grep -Eq "zsh-autosuggestions|zsh-syntax-highlighting|fast-syntax-highlighting|zsh-autocomplete|powerlevel10k" "$ZSHRC"; then
-    warn "Old plugin entries found in .zshrc"
-
-    if confirm "Clean old plugin/theme lines from .zshrc?"; then
-        sed -i '/zsh-autosuggestions/d;/zsh-syntax-highlighting/d;/fast-syntax-highlighting/d;/zsh-autocomplete/d;/powerlevel10k/d' "$ZSHRC"
-        success "Cleaned old entries."
-    else
-        warn "Keeping existing plugin entries."
-    fi
-fi
-
-success "Cleanup Completed."
-
-# ===========================================================
-# Install Oh-My-Zsh
-# ===========================================================
-msg "🚀 Installing Oh-My-Zsh..."
-
-if [[ -d "$HOME/.oh-my-zsh" ]]; then
-    warn "Oh-My-Zsh is already installed. Skipping installation."
-else
-    yes | CHSH=no RUNZSH=no sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)" || error "Oh-My-Zsh install failed."
-    success "Oh-My-Zsh Installed."
-fi
 
 # ===========================================================
 # Plugin Selection
@@ -421,109 +711,48 @@ case "$choice" in
     *) selected_plugins=("${plugins[@]}") ;;
 esac
 
-# ===========================================================
-# Install Plugins
-# ===========================================================
-msg "📦 Installing Zsh Plugins..."
+# Define plugin repositories
+declare -A PLUGIN_REPOS
+PLUGIN_REPOS["zsh-autosuggestions"]="https://github.com/zsh-users/zsh-autosuggestions"
+PLUGIN_REPOS["zsh-syntax-highlighting"]="https://github.com/zsh-users/zsh-syntax-highlighting"
+PLUGIN_REPOS["fast-syntax-highlighting"]="https://github.com/zdharma-continuum/fast-syntax-highlighting"
+PLUGIN_REPOS["zsh-autocomplete"]="https://github.com/marlonrichert/zsh-autocomplete"
 
-for plugin in "${selected_plugins[@]}"; do
-    plug_path="$ZSH_CUSTOM/plugins/$plugin"
-    repo=""
-    case "$plugin" in
-        zsh-autosuggestions)
-            repo="https://github.com/zsh-users/zsh-autosuggestions" ;;
-        zsh-syntax-highlighting)
-            repo="https://github.com/zsh-users/zsh-syntax-highlighting" ;;
-        fast-syntax-highlighting)
-            repo="https://github.com/zdharma-continuum/fast-syntax-highlighting" ;;
-        zsh-autocomplete)
-            repo="https://github.com/marlonrichert/zsh-autocomplete" ;;
-    esac
+# Define theme repository
+THEME_REPO="https://github.com/romkatv/powerlevel10k.git"
 
-    if [[ -d "$plug_path" ]]; then
-        warn "Plugin '$plugin' already exists. Skipping installation."
+# ===========================================================
+# Install Oh-My-Zsh and Configure for Primary User
+# ===========================================================
+msg "🚀 Installing Oh-My-Zsh for primary user..."
+if [[ -d "$USER_HOME/.oh-my-zsh" ]]; then
+    warn "Oh-My-Zsh is already installed for primary user. Skipping installation."
+else
+    if [[ -n "$SUDO_USER" && "$UID" == "0" ]]; then
+        # Script run with sudo, install for SUDO_USER
+        yes | CHSH=no RUNZSH=no sudo -u "$SUDO_USER" sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)" || error "Oh-My-Zsh install failed for primary user."
     else
-        git clone --depth=1 "$repo" "$plug_path" || error "Failed installing $plugin"
-        success "Installed plugin: $plugin"
+        # Script run directly by user
+        yes | CHSH=no RUNZSH=no sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)" || error "Oh-My-Zsh install failed for primary user."
     fi
-done
+    success "Oh-My-Zsh Installed for primary user."
+fi
+install_zsh_config "$USER_HOME" "$SUDO_USER"
 
 # ===========================================================
-# Install Theme
+# Install Oh-My-Zsh and Configure for Root User (if -R specified)
 # ===========================================================
-msg "🎨 Installing Powerlevel10k Theme..."
-if [[ -d "$ZSH_CUSTOM/themes/powerlevel10k" ]]; then
-    warn "Powerlevel10k is already installed. Skipping installation."
-else
-    git clone --depth=1 https://github.com/romkatv/powerlevel10k.git \
-    "$ZSH_CUSTOM/themes/powerlevel10k" || error "Failed installing Powerlevel10k."
-    success "Powerlevel10k Installed."
-fi
-
-# ===========================================================
-# Modify .zshrc
-# ===========================================================
-msg "📝 Updating .zshrc..."
-
-# --- Restore original .zshrc if a backup exists ---
-if [[ -f "$BACKUP" ]]; then
-    msg "Restoring your original .zshrc from backup to preserve custom settings..."
-    cp "$BACKUP" "$ZSHRC"
-    success "Original .zshrc restored."
-fi
-
-# --- Ensure Oh-My-Zsh required lines are present ---
-
-# 1. Set ZSH environment variable
-OMZ_PATH_STR="export ZSH=\"$USER_HOME/.oh-my-zsh\""
-if ! grep -qF 'export ZSH=' "$ZSHRC"; then
-    msg "Adding ZSH environment variable..."
-    # Prepend to the file safely
-    echo -e "$OMZ_PATH_STR\n" | cat - "$ZSHRC" > "${ZSHRC}.tmp" && mv "${ZSHRC}.tmp" "$ZSHRC"
-    success "ZSH variable set."
-fi
-
-# 2. Set ZSH_THEME
-# Remove any existing ZSH_THEME definitions to avoid conflicts
-sed -i '/^ZSH_THEME=/d' "$ZSHRC"
-# Add our theme, preferably before plugins are sourced
-THEME_STR="ZSH_THEME=\"powerlevel10k/powerlevel10k\""
-if grep -q "oh-my-zsh.sh" "$ZSHRC"; then
-    # Insert before the source line for better organization
-    sed -i "/oh-my-zsh.sh/i $THEME_STR" "$ZSHRC"
-else
-    # Append if source line not found (fallback)
-    echo "$THEME_STR" >> "$ZSHRC"
-fi
-success "Powerlevel10k theme configured."
-
-
-# 3. Set plugins
-PLUGIN_STR="plugins=(${selected_plugins[*]})"
-if grep -q "^plugins=(.*)" "$ZSHRC"; then
-    # If plugins array exists, replace it
-    sed -i -E "s/^plugins=\(.*\)/$PLUGIN_STR/" "$ZSHRC"
-    success "Updated existing plugin list."
-else
-    # If no plugins array, add it before the source line
-    if grep -q "oh-my-zsh.sh" "$ZSHRC"; then
-        sed -i "/oh-my-zsh.sh/i $PLUGIN_STR" "$ZSHRC"
+if [[ "$ROOT_INSTALL" == "true" ]]; then
+    msg "🚀 Installing Oh-My-Zsh for root user..."
+    if [[ -d "/root/.oh-my-zsh" ]]; then
+        warn "Oh-My-Zsh is already installed for root user. Skipping installation."
     else
-        # Append if source line not found (fallback)
-        echo "$PLUGIN_STR" >> "$ZSHRC"
+        # Always run as root for root's installation
+        yes | CHSH=no RUNZSH=no sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)" || error "Oh-My-Zsh install failed for root user."
+        success "Oh-My-Zsh Installed for root user."
     fi
-    success "Added new plugin list."
+    install_zsh_config "/root" "root"
 fi
-
-# 4. Source Oh-My-Zsh
-OMZ_SOURCE_STR="source \"\$ZSH/oh-my-zsh.sh\""
-if ! grep -q "oh-my-zsh.sh" "$ZSHRC"; then
-    msg "Adding Oh-My-Zsh source line..."
-    echo -e "\n# Load Oh-My-Zsh\n$OMZ_SOURCE_STR" >> "$ZSHRC"
-    success "Oh-My-Zsh will be sourced."
-fi
-
-success ".zshrc Updated."
 
 # ===========================================================
 # Final Output
@@ -536,6 +765,8 @@ if [[ "$ALL_INSTALL" == "true" ]]; then
 else
     if confirm "Configure Powerlevel10k now?"; then
         msg "Starting Powerlevel10k configuration wizard..."
+        # This needs to be run as the current user, not necessarily the target user of the install_zsh_config function
+        # So we use the global ZSH_CUSTOM here.
         "$ZSH_CUSTOM/themes/powerlevel10k/gitstatus/bin/p10k" configure
         success "Powerlevel10k configured."
     fi
@@ -547,20 +778,15 @@ ${GREEN}✨ Your custom terminal setup is ready!${RESET}
 📌 Backup: ~/.zshrc.bak  
 📘 Log file: $LOG  
 🎨 Theme: Powerlevel10k  
-🔌 Plugins: ${selected_plugins[*]}
+🔌 Plugins: ${selected_plugins[*]} 
 
 Restart your shell with:  ${CYAN}exec zsh${RESET}
 "
 
-if confirm "Set Zsh as your default shell (requires password)?"; then
-    chsh -s "$(which zsh)" || warn "Failed to set Zsh as default shell. You may need to do it manually."
-    success "Zsh set as default shell."
-fi
-
 if confirm "Restart shell now?"; then
     exec zsh
 else
-    msg "👍 Restart later to apply changes."
+    msg "👍 Restart later to apply to changes."
 fi
 
 exit 0
