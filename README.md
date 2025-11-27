@@ -47,12 +47,12 @@ This script automates the setup of a custom Zsh terminal environment for both Li
 
 1.  **Clone the repository (or download the script):**
     ```bash
-    git clone https://github.com/yourusername/customterm.git # Replace with actual repo URL
+    git clone https://github.com/l0n3m4n/custom-terminal.git
     cd customterm
     ```
     or simply download the `customterm.sh` script:
     ```bash
-    curl -o customterm.sh https://raw.githubusercontent.com/yourusername/customterm/main/customterm.sh # Replace with actual raw URL
+    curl -o customterm.sh https://raw.githubusercontent.com/l0n3m4n/custom-terminal/refs/heads/main/customterm.sh
     chmod +x customterm.sh
     ```
 
