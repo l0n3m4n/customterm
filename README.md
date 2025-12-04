@@ -57,6 +57,13 @@ Customterm automates the setup of a custom Zsh terminal environment for both Lin
     ```
 
 ### **Run the script:**
+```bash
+# installed both non-root and root user
+sudo ./customterm.sh -a -R
+
+# non-root user
+./customterm.sh -a 
+```
 ![gif](assets/customterm.gif)
  
 ### Post-Installation
