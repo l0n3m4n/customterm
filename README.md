@@ -23,16 +23,17 @@ Customterm
 
 Customterm automates the setup of a custom Zsh terminal environment for both Linux and macOS...
 
-## Features
+## Features 
 
-*   Automated installation of Zsh, curl, and git (if not already present).
-*   Checks for amd64 architecture.
-*   Automated installation of Oh-My-Zsh.
-*   Installs Powerlevel10k theme.
-*   Installs selected Zsh plugins: `zsh-autosuggestions`, `zsh-syntax-highlighting`, `fast-syntax-highlighting`, and `zsh-autocomplete`.
-*   Manages `.zshrc` configuration, including backup options.
-*   Idempotent installations: gracefully handles existing installations of Oh-My-Zsh and plugins.
-*   Sudo access check for dependency installation.
+* ⚡ **Automated installation** of Zsh, curl, and git (if not already present)
+* 🖥️ **Checks for amd64 architecture**
+* 🛠️ **Automated installation of Oh-My-Zsh**
+* 🌈 **Installs Powerlevel10k theme**
+* 🔌 **Installs selected Zsh plugins**: `zsh-autosuggestions`, `zsh-syntax-highlighting`, `fast-syntax-highlighting`, and `zsh-autocomplete`
+* 📄 **Manages `.zshrc` configuration**, including backup options
+* 🔁 **Idempotent installations**: gracefully handles existing installations of Oh-My-Zsh and plugins
+* 🔑 **Sudo access check** for dependency installation
+
 
 ## Getting Started
 ![logo](assets/banner.png)
