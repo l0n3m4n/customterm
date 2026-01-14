@@ -29,8 +29,8 @@ Customterm automates the setup of a custom Zsh terminal environment for both Lin
 * 🖥️ **Checks for amd64 architecture**
 * 🛠️ **Automated installation of Oh-My-Zsh**
 * 🌈 **Installs Powerlevel10k theme**
-* 🔌 **Installs selected Zsh plugins**: `zsh-autosuggestions`, `zsh-syntax-highlighting`, `fast-syntax-highlighting`, and `zsh-autocomplete`
-* 📄 **Manages `.zshrc` configuration**, including backup options
+* 🔌 **Installs Zsh plugins**: `zsh-autosuggestions`, `zsh-syntax-highlighting`, `fast-syntax-highlighting`, and `zsh-autocomplete`
+* 📄 **Manages `.zshrc` configuration**, including backup options `.zshrc.bak`
 * 🔁 **Idempotent installations**: gracefully handles existing installations of Oh-My-Zsh and plugins
 * 🔑 **Sudo access check** for dependency installation
 
