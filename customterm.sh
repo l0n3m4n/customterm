@@ -603,9 +603,26 @@ else
 
 fi
 
-# Internet Check
-msg "🌐 Checking Internet..."
-ping -c1 8.8.8.8 &>/dev/null || error "No Internet Connection."
+# # Internet Check
+# msg "🌐 Checking Internet..."
+
+# if ! command -v ping >/dev/null 2>&1; then
+#     msg "📦 'ping' not found. Installing..."
+
+#     if command -v apt >/dev/null 2>&1; then
+#         sudo apt update && sudo apt install -y iputils-ping
+#     elif command -v dnf >/dev/null 2>&1; then
+#         sudo dnf install -y iputils
+#     elif command -v yum >/dev/null 2>&1; then
+#         sudo yum install -y iputils
+#     elif command -v pacman >/dev/null 2>&1; then
+#         sudo pacman -Sy --noconfirm iputils
+#     else
+#         error "Unsupported package manager. Please install 'ping' manually."
+#     fi
+# fi
+
+# ping -c1 8.8.8.8 &>/dev/null || error "No Internet Connection."
 
 [[ ! -w "$HOME" ]] && error "Home directory not writable."
 success "System Check Passed."
